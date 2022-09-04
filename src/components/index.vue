@@ -9,23 +9,30 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, reactive, ref } from 'vue';
+import { onMounted, reactive, ref, watch } from 'vue';
 
-defineProps<{
-  data: any
-}>()
+const props = defineProps({
+  data: Array
+})
+
+console.log(props.data)
 
 const worker = new Worker('worker.js')
 let now = Date.now()
 let i = 1
 
 let data: any[] = []
-// let treeData = reactive([])
+const treeData = reactive([])
 let scrollTop = ref(0)
 
 onMounted(() => {
-  setData()
+  // setData()
+  // treeData.push(...flat(props.data))
 })
+
+// watch(props.data, () => {
+//   treeData.push(...flat(props.data))
+// })
 
 worker.onmessage = (e) => {
   treeData.length = 0
