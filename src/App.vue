@@ -8,12 +8,16 @@
 // Check out https://vuejs.org/api/sfc-script-setup.html#script-setup
 import tree from './components/index.vue'
 import axios from 'axios'
-import { reactive } from 'vue';
+import { reactive, onMounted } from 'vue';
+
 
 const treeData = reactive([])
 
-axios.get('./data.json').then(res => {
-  treeData.push(res.data)
+onMounted(() => {
+  console.log(1)
+  axios.get('./data.json').then(res => {
+    treeData.push(...res.data)
+  })
 })
 
 

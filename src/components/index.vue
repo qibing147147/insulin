@@ -1,7 +1,7 @@
 <template>
   <div class="scroller" @scroll="handleScroll">
     <div class="container" :style="{ paddingTop: `${scrollTop}px` }">
-      <div v-for="item in treeData" :key="item.id" class="item" :style="{paddingLeft: item.level * 20 + 'px'}">
+      <div v-for="item in renderData" :key="item.id" class="item" :style="{paddingLeft: item.level * 20 + 'px'}">
         {{ item.id }}
       </div>
     </div>
@@ -9,33 +9,42 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, reactive, ref, watch } from 'vue';
+import { onMounted, reactive, ref, watch, computed } from 'vue';
 
 const props = defineProps({
   data: Array
 })
 
-console.log(props.data)
 
 const worker = new Worker('worker.js')
 let now = Date.now()
 let i = 1
 
-let data: any[] = []
-const treeData = reactive([])
-let scrollTop = ref(0)
+let treeData = reactive([])
 
-onMounted(() => {
-  // setData()
-  // treeData.push(...flat(props.data))
+watch(() => props.data, (val) => {
+  console.log(val)
+  worker.postMessage({
+    type: 'init',
+    data: JSON.stringify(val)
+  })
+}, {
+  deep: true
 })
 
-// watch(props.data, () => {
-//   treeData.push(...flat(props.data))
-// })
+let scrollTop = ref(0)
+
+const startIndex = computed(() => {
+  return Math.floor(scrollTop.value / 25)
+})
+
+const renderData = computed(() => {
+  return treeData.slice(startIndex.value, startIndex.value + 50)
+})
 
 worker.onmessage = (e) => {
   treeData.length = 0
+  let data
   if (typeof e.data === 'string') {
     data = JSON.parse(e.data)
   } else {
@@ -45,7 +54,7 @@ worker.onmessage = (e) => {
     console.log('onmessage i', i)
     i += 1
   }
-  treeData.push(...data)
+  treeData = reactive(data)
 }
 
 function setData () {
@@ -72,16 +81,6 @@ function flat (data, level = 1) {
 
 function handleScroll (e: UIEvent) {
   e.preventDefault()
-  const startIndex = Math.floor(e.target!.scrollTop / 25)
-  console.log('startIndex', startIndex)
-  if (now) {
-    console.log('scroll', Date.now() - now)
-  }
-  console.log('scroll i', i)
-  now = Date.now()
-  worker.postMessage({
-    startIndex
-  })
   scrollTop.value = e.target!.scrollTop
   // this.treeData = this.data.slice(startIndex, startIndex + 50)
 }
